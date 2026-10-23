@@ -1,0 +1,67 @@
+//	Bibliotheken aufrufen 
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+
+//	Bildschirmmaße deklarieren - Breite x Höhe
+#define SCREEN_WIDTH 128 
+#define SCREEN_HEIGHT 32 
+	
+#define OLED_RESET     -1   // 	Reset-Pin festlegen -- -1, da das Display keinen extra Reset-Pin benötigt
+#define SCREEN_ADDRESS 0x3C //	Adresse des Displays -- aus Datenblatt zu entnehmen 
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);	// Display deklarieren
+
+
+
+void setup() {
+  Serial.begin(9600);
+
+  delay(500);
+
+  // 3.3V interne Spannungsversorgung für Display erstellen 
+  if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    for(;;); 
+  }
+
+  display.clearDisplay();
+  display.display();
+  delay(1000); // Pause for 1 seconds
+}
+
+
+const int measurePin = A0; 		// Messpin
+
+const float maxVoltage = 4.2;		// Maximale Zellspannung
+const float minVoltage = 2.5;		// Minimale Zellspannung
+
+void loop() {
+
+  int sensorValue = analogRead(measurePin);		// Messwerte in Variable "sensorValue" schreiben
+  float voltage = (sensorValue * 5.0/1023.0);		// Messspannung ausrechnen
+
+  int Level = map(sensorValue, 500, 840, 0, 100); 	// Spannungsbereich der Akkuzellen auf 0 - 100 projizieren
+  Level = constrain(Level, 0, 100); 
+ 
+ 
+  //	Displayübertragung initialisieren 
+  display.clearDisplay();		
+  display.setTextSize(2);
+  display.setTextColor(WHITE); 
+
+  //	Akkustand auf Display ausgeben
+  display.setCursor(85, 8);
+  display.print(Level);
+
+  //	Füllstandsbalken ausgeben
+  int barWidth = map(Level, 0, 100, 0, 60);
+  display.drawRect(5, 8, 60, 15, WHITE);
+  display.fillRect(5, 8, barWidth, 15, WHITE); 
+
+  Serial.println(Level);
+
+  display.display();
+  delay(1000);  
+}
